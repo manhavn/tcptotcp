@@ -71,7 +71,7 @@ pub fn connect(
 
     let mut delay: u64 = 0;
     let max_delay = keep_alive_delay_time_seconds / rate_check_seconds as u64;
-    let rate_check = Duration::from_millis(rate_check_seconds as u64);
+    let rate_check = Duration::from_secs(rate_check_seconds as u64);
     loop {
         if ping1.load(Ordering::Acquire) && ping2.load(Ordering::Acquire) {
             ping1.store(false, Ordering::Release);

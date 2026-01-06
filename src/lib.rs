@@ -36,7 +36,11 @@ fn stream(
     stream_write.shutdown(Shutdown::Both).ok();
 }
 
-pub fn connect(stream_client: TcpStream, stream_app: TcpStream) -> Result<()> {
+pub fn connect(
+    stream_client: TcpStream,
+    stream_app: TcpStream,
+    timeout_alive_sec: u64,
+) -> Result<()> {
     let clone_stream_client = stream_client.try_clone()?;
     let clone_stream_app = stream_app.try_clone()?;
     let clone_stream_client_closed = stream_client.try_clone()?;
@@ -60,7 +64,7 @@ pub fn connect(stream_client: TcpStream, stream_app: TcpStream) -> Result<()> {
 
     thread::spawn(move || {
         let timeout: u64 = 5; // timeout rate 5s
-        let count_max_waiting = 7_200 / timeout; // waiting 2 hours { 60s * 60p * 2h = 7200s }
+        let count_max_waiting = timeout_alive_sec / timeout;
         thread::sleep(Duration::from_secs(timeout)); // waiting first connection
         let mut count_waiting: u64 = 0;
         loop {

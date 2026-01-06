@@ -14,7 +14,7 @@
 
 [dependencies]
 #tcptotcp = { git = "https://github.com/manhavn/tcptotcp.git" }
-tcptotcp = "0.0.1" # https://crates.io/crates/tcptotcp
+tcptotcp = "0.0.2" # https://crates.io/crates/tcptotcp
 ```
 
 - `test.rs`
@@ -31,13 +31,14 @@ mod tests {
     #[test]
     fn test_tcp_server() {
         let listener = TcpListener::bind("localhost:9000").unwrap();
+        let timeout_alive_sec: u64 = 7_200; // waiting 2 hours { 60s * 60p * 2h = 7200s }
 
         let (tx, rx) = unbounded::<TcpStream>();
         for stream in listener.incoming() {
             match stream {
                 Ok(stream_client) => match rx.try_recv() {
                     Ok(stream_app) => {
-                        thread::spawn(|| connect(stream_client, stream_app));
+                        thread::spawn(|| connect(stream_client, stream_app, timeout_alive_sec));
                     }
                     _ => {
                         tx.send(stream_client).ok();
@@ -52,8 +53,9 @@ mod tests {
     fn test_tcp_client() {
         let stream_server = TcpStream::connect("localhost:9000").unwrap();
         let stream_app = TcpStream::connect("google.com:80").unwrap();
+        let timeout_alive_sec: u64 = 7_200; // waiting 2 hours { 60s * 60p * 2h = 7200s }
 
-        connect(stream_server, stream_app).unwrap();
+        connect(stream_server, stream_app, timeout_alive_sec).unwrap();
     }
 
     #[test]

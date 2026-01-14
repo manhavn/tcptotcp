@@ -1,10 +1,11 @@
 [package]
 name = "tcptotcp"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2024"
 description = "TCP Transfers"
 repository = "https://github.com/manhavn/tcptotcp"
 license = "MIT"
+readme = "README.md"
 
 [lib]
 path = "src/lib.rs"

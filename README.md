@@ -1,21 +1,74 @@
-# SETUP
+# tcptotcp
 
-- Github: [https://github.com/manhavn/tcptotcp](https://github.com/manhavn/tcptotcp)
-- Crate: [https://crates.io/crates/tcptotcp](https://crates.io/crates/tcptotcp)
+A tiny, dependency-free TCP bridge that relays bytes **bidirectionally** between two `TcpStream`s.
 
-```shell
- cargo add tcptotcp
+- ✅ No async runtime
+- ✅ No dependencies
+- ✅ Blocking I/O using `std::thread`
+- ✅ Good fit for “client socket ↔ upstream socket” forwarding
+
+## Install
+
+```bash
+cargo add tcptotcp
 ```
 
-- `Cargo.toml`
+Or in Cargo.toml:
 
 ```toml
-# ...
-
 [dependencies]
-#tcptotcp = { git = "https://github.com/manhavn/tcptotcp.git" }
-tcptotcp = "0.0.4" # https://crates.io/crates/tcptotcp
+tcptotcp = "0.0.5"
 ```
+
+---
+
+## Quick start (local forwarder)
+
+Accept a local client, connect to an upstream, then bridge both sockets:
+
+```rust
+use std::net::{TcpListener, TcpStream};
+use std::thread;
+use tcptotcp::connect;
+
+fn main() -> std::io::Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:9000")?;
+    println!("Listening on 127.0.0.1:9000");
+
+    for incoming in listener.incoming() {
+        let client = incoming?;
+        let upstream = TcpStream::connect("example.com:80")?;
+
+        // Check every 5 seconds, close if no bridged traffic for 2 hours.
+        let rate_check_seconds: u8 = 5;
+        let idle_timeout_seconds: u64 = 7_200;
+
+        thread::spawn(move || {
+            let _ = connect(client, upstream, rate_check_seconds, idle_timeout_seconds);
+        });
+    }
+
+    Ok(())
+}
+```
+
+> Use no_run in docs.rs examples if you paste this into Rustdoc (network is not available during doctests).
+---
+
+## Traffic-based idle timeout (not TCP keepalive)
+
+`connect()` does not send keepalive probes.
+It treats the connection as “alive” only when data is relayed.
+Parameters:
+
+- `rate_check_seconds`: how often the calling thread checks for traffic (seconds)
+- `keep_alive_delay_time_seconds`: maximum allowed idle time without traffic (seconds)
+
+When the idle timeout triggers, both streams are shut down and connect() returns.
+
+---
+
+## Test
 
 - `test.rs`
 
